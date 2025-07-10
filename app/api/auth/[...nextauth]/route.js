@@ -5,6 +5,7 @@ import clientPromise from "@/lib/mongodb";
 
 export const authOptions = {
   trustHost: true,
+  useSecureCookies: true,
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: "habitTracker",
   }),
@@ -15,17 +16,6 @@ export const authOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  cookies: {
-    sessionToken: {
-      name: `__Secure-next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true, // important on Vercel
-      },
-    },
-  },
   callbacks: {
     async session({ session, token }) {
       session.user.id = token.id;
