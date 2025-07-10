@@ -1,4 +1,4 @@
-// /app/api/habits/[id]/complete/route.js
+export const dynamic = 'force-dynamic'; // ✅ Add this
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -31,12 +31,11 @@ export async function PUT(req, { params }) {
     const index = habit.completedDates.indexOf(date);
 
     if (index > -1) {
-      habit.completedDates.splice(index, 1); // Uncheck
+      habit.completedDates.splice(index, 1);
     } else {
-      habit.completedDates.push(date); // Mark complete
+      habit.completedDates.push(date);
     }
 
-    // Update streak
     habit.streak = calculateStreak(habit.completedDates);
     await habit.save();
 
@@ -56,7 +55,6 @@ export async function PUT(req, { params }) {
   }
 }
 
-// Utility to calculate streak
 function calculateStreak(dates) {
   const sorted = [...dates].sort((a, b) => new Date(b) - new Date(a));
   let streak = 0;
