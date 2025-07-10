@@ -8,32 +8,42 @@ import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
+  console.log("Outside useEffect - session:", session, "status:", status);
   const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState("");
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
 
-  useEffect(() => {
+ useEffect(() => {
+  console.log("Status:", status);
+  console.log("Session:", session);
+
   if (status === "authenticated") {
+    console.log("Fetching habits...");
+
     fetch("/api/habits")
       .then((res) => {
+        console.log("API Response:", res.status);
         if (!res.ok) {
-          console.error("Failed to load habits:", res.status);
           throw new Error(`API returned ${res.status}`);
         }
         return res.json();
       })
       .then((data) => {
+        console.log("Habits fetched:", data);
         setHabits(data);
       })
       .catch((err) => {
         console.error("Error fetching habits:", err);
       })
       .finally(() => {
+        console.log("✅ Done loading");
         setLoading(false);
       });
+  } else {
+    setLoading(false); // avoid infinite spinner if not authenticated
   }
-}, [status]);
+}, [status, session]);
   const addHabit = async () => {
     if (!newHabit.trim()) return;
     const res = await fetch("/api/habits", {
