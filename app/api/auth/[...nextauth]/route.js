@@ -5,7 +5,7 @@ import clientPromise from "@/lib/mongodb";
 
 export const authOptions = {
   trustHost: true,
-  useSecureCookies: true,
+  useSecureCookies: true, // Important for Vercel HTTPS
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: "habitTracker",
   }),
@@ -16,6 +16,20 @@ export const authOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
+  
+  // ✅ Add this here 👇
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+  },
+
   callbacks: {
     async session({ session, token }) {
       session.user.id = token.id;
@@ -26,12 +40,13 @@ export const authOptions = {
       return token;
     },
   },
+
   debug: true,
 };
 
-const handler = NextAuth(authOptions); // ❗ No await here
-
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+
 
 
 
