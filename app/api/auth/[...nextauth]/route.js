@@ -4,6 +4,7 @@ import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 
 export const authOptions = {
+  trustHost: true,
   adapter: MongoDBAdapter(clientPromise, {
     databaseName: "habitTracker",
   }),
@@ -11,28 +12,31 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          scope: "openid email profile",
-        },
-      },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true, // important on Vercel
+      },
+    },
+  },
   callbacks: {
-    async signIn({ account, profile }) {
-      return true;
+    async session({ session, token }) {
+      session.user.id = token.id;
+      return session;
     },
     async jwt({ token, user }) {
       if (user) token.id = user.id;
       return token;
     },
-    async session({ session, token }) {
-      session.user.id = token.id;
-      return session;
-    },
   },
+  debug: true,
 };
 
 const handler = NextAuth(authOptions); // ❗ No await here
