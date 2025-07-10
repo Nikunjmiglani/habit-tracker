@@ -7,21 +7,32 @@ import Habit from "@/models/Habit";
 
 // GET: Fetch habits
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
+  try {
+    const session = await getServerSession(authOptions);
+    console.log("SESSION (GET /api/habits):", session);
+
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    await connectMongo();
+    const habits = await Habit.find({ userEmail: session.user.email });
+
+    return new Response(JSON.stringify(habits), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+
+  } catch (err) {
+    console.error("Error in GET /api/habits:", err);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
-
-  await connectMongo();
-  const habits = await Habit.find({ userEmail: session.user.email });
-
-  return new Response(JSON.stringify(habits), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
 // ✅ POST: Add a new habit

@@ -14,16 +14,26 @@ export default function Dashboard() {
   const [days, setDays] = useState(30);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetch("/api/habits")
-        .then((res) => res.json())
-        .then((data) => {
-          setHabits(data);
-          setLoading(false);
-        });
-    }
-  }, [status]);
-
+  if (status === "authenticated") {
+    fetch("/api/habits")
+      .then((res) => {
+        if (!res.ok) {
+          console.error("Failed to load habits:", res.status);
+          throw new Error(`API returned ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setHabits(data);
+      })
+      .catch((err) => {
+        console.error("Error fetching habits:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }
+}, [status]);
   const addHabit = async () => {
     if (!newHabit.trim()) return;
     const res = await fetch("/api/habits", {
