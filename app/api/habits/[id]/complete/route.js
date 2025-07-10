@@ -6,44 +6,54 @@ import connectMongo from "@/lib/mongoose";
 import Habit from "@/models/Habit";
 
 export async function PUT(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { id } = params;
+    const { date } = await req.json();
+
+    await connectMongo();
+
+    const habit = await Habit.findById(id);
+    if (!habit) {
+      return new Response(JSON.stringify({ error: "Habit not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const index = habit.completedDates.indexOf(date);
+
+    if (index > -1) {
+      habit.completedDates.splice(index, 1); // Uncheck
+    } else {
+      habit.completedDates.push(date); // Mark complete
+    }
+
+    // Update streak
+    habit.streak = calculateStreak(habit.completedDates);
+    await habit.save();
+
+    return new Response(JSON.stringify({ habit }), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
+  } catch (err) {
+    console.error("API ERROR in /complete:", err);
+    return new Response(
+      JSON.stringify({ error: "Internal Server Error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
-
-  const { id } = params;
-  const { date } = await req.json();
-
-  await connectMongo();
-
-  const habit = await Habit.findById(id);
-  if (!habit) {
-    return new Response(JSON.stringify({ error: "Habit not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const index = habit.completedDates.indexOf(date);
-
-  if (index > -1) {
-    habit.completedDates.splice(index, 1); // Uncheck
-  } else {
-    habit.completedDates.push(date); // Mark complete
-  }
-
-  // Update streak (optional improvement)
-  habit.streak = calculateStreak(habit.completedDates); // See utility below
-
-  await habit.save();
-
-  return new Response(JSON.stringify({ habit }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
 // Utility to calculate streak
@@ -65,5 +75,6 @@ function calculateStreak(dates) {
 
   return streak;
 }
+
 
 
